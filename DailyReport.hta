@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Daily Report Generator</title>
+
+    <hta:application
+            id="DailyReport"
+            applicationname="Daily Report Generator"
+            border="thin"
+            caption="yes"
+            maximizebutton="yes"
+            minimizebutton="yes"
+            sysmenu="yes"
+            singleinstance="yes"
+            scroll="no"
+            windowstate="normal"
+            innerborder="no"
+    />
+
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 2em;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 2em;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .form-group { margin-bottom: 1.5em; }
+        label {
+            display: block;
+            margin-bottom: 0.5em;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 0.8em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 1em;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover { background-color: #0056b3; }
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 1em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+            box-sizing: border-box; /* Quan trọng để giữ kích thước cố định */
+            resize: vertical; /* Cho phép thay đổi kích thước theo chiều dọc */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📝 Daily Report Generator</h1>
+    <p>"Thở đi nhẹ một kiếp người, Vui đi để có nụ cười thênh thang"</p>
+    <hr>
+
+    <div class="form-group">
+        <label for="authorName">Nhập tên người viết báo cáo:</label>
+        <input type="text" id="authorName" value="チェン・ニュ・フィン" placeholder="Họ và tên">
+    </div>
+
+    <div class="form-group">
+        <label for="volume">Vui lòng chọn quyển đã nhập:</label>
+        <select id="volume">
+            <option value="1">Quyển 1</option>
+            <option value="2">Quyển 2</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="learnedChapter">Vui lòng nhập số chương đã học hôm nay:</label>
+        <input type="text" id="learnedChapter" placeholder="e.g., 14">
+    </div>
+
+    <div class="form-group">
+        <label for="nextChapter">Vui lòng nhập số chương sẽ học lần tới:</label>
+        <input type="text" id="nextChapter" placeholder="e.g., 15">
+    </div>
+
+    <div class="form-group">
+        <label for="contactInfo">Nhập câu hỏi nếu có (ko nhập thì mặc định là '特になし'):</label>
+        <input type="text" id="contactInfo" value="特になし">
+    </div>
+
+    <button onclick="generateReport()">Tạo báo cáo</button>
+
+    <br><br>
+    <hr>
+    <h2>Kết quả</h2>
+    <div id="reportContainer">
+        <textarea id="reportArea" readonly placeholder="Nội dung báo cáo sẽ hiển thị ở đây..."></textarea>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    // ********** POLYFILL CHO PHƯƠNG THỨC TRIM() **********
+    /**
+     * Hàm thay thế cho .trim() (để tương thích với HTA)
+     */
+    function trimPolyfill(str) {
+        // Regex để loại bỏ khoảng trắng ở đầu và cuối chuỗi
+        // Dùng replace() với regex là cách tương thích nhất trong HTA cũ.
+        return str.replace(/^\s+|\s+$/g, '');
+    }
+    // Dữ liệu chương cho Quyển 1
+    var chaptersQuyen1 = {
+        14: {
+            title: "Chapter 14 java を支えるクラスたち",
+            contents: [
+                "１．java が備えるAPI群",
+                "２．すべてのクラスの組先",
+                "３．静的メンバ",
+                "４．第14章のまとめ",
+                "５．練習問題"
+            ]
+        },
+        15: {
+            title: "Chapter 15 文字列日付の扱い",
+            contents: [
+                "１．文字列処理とは",
+                "２．基本的な文字列操作",
+                "３．文字列の連結",
+                "４．正規表現の活用",
+                "５．文字列の書式整形",
+                "６．日付と時刻を扱い",
+                "７．Time API",
+                "８．第15章のまとめ",
+                "９．練習問題"
+            ]
+        },
+        16: {
+            title: "Chapter 1.16　コレクション",
+            contents: [
+                "１．コレクションとは",
+                "２．ArrayListの使い方",
+                "３．LinkedListの使い方",
+                "４．Set関連のクラス",
+                "５．Mapの使い方",
+                "６．コレクションの応用",
+                "７．第16章のまとめ",
+                "８．練習問題"
+            ]
+        },
+        17: {
+            title: "Chapter 1.17　例外",
+            contents: [
+                "１．エラーの種類と対応策",
+                "２．例外処理の流れ",
+                "３．例外クラスとその種類",
+                "４．例外の発生と例外インスタンス",
+                "５．さまざまなcatch構文",
+                "６．例外の伝播",
+                "７．第17章のまとめ",
+                "８．練習問題"
+            ]
+        },
+        18: {
+            title: "Chapter 1.18　まだまだ広がるJavaの世界",
+            contents: [
+                "１．ファイルを読み書きする",
+                "２．インターネットにアクセスする",
+                "３．データベースを操作する",
+                "４．ウィンドウアプリケーションを作る",
+                "５．スマートフォンアプリを作る",
+                "６．Webサーバで動くJavaプログラム"
+            ]
+        },
+        19: {
+            title: "付録Ａ　開発環境のセットアップ",
+            contents: [
+                "１．ローカル開発環境の種類と構成",
+                "２．コマンドプロンプトの使い方",
+                "３．JDK単体利用による開発手順"
+            ]
+        },
+        20: {
+            title: "付録Ｂ　エラー解決・虎の巻",
+            contents: [
+                "１．エラーとの上手なつきあい方",
+                "２．トラベルシューティング",
+                "３．エラーメッセージ別索引"
+            ]
+        },
+        21: {
+            title: "付録Ｃ　クイックリファレンス",
+            contents: [
+                "１．代表的な構文",
+                "２．予約語",
+                "３．演算子",
+                "４．正規表現",
+                "５．エスケープシーケンス"
+            ]
+        }
+    };
+
+    // Dữ liệu chương cho Quyển 2
+    var chaptersQuyen2 = {
+        1: {
+            title: "第1章 インスタンスの基本操作",
+            contents: [
+                "１．インスタンスの5台基本操作",
+                "２．インスタンスの文字列表現",
+                "３．インスタンスの等価判定",
+                "４．インスタンスの要約",
+                "５．インスタンスの順序付け",
+                "６．インスタンスの複製",
+                "７．レコード",
+                "・まとめと練習問題"
+            ]
+        },
+        2: {
+            title: "第2章 さまざまな種類のクラス",
+            contents: [
+                "１．型安全という価値",
+                "２．ジェネリクス",
+                "３．列挙型",
+                "４．シールクラス",
+                "５．インナークラス",
+                "６．null安全性",
+                "・まとめと練習問題"
+            ]
+        },
+        3: {
+            title: "第3章 関数とラムダ式",
+            contents: [
+                "１．関数",
+                "２．関数の代入",
+                "３．ラムダ式",
+                "４．関数オブジェクトの活用",
+                "５．SteamAPI",
+                "・まとめと練習問題"
+            ]
+        },
+        4: {
+            title: "第4章 JVM制御とリフレクション",
+            contents: [
+                "１．JVMへのアクセス",
+                "２．JVMの終了",
+                "３．外部プログラムの実行",
+                "４．システムプロパティの利用",
+                "５．ロケールと国際化",
+                "６．メモリに関する状態の取得",
+                "７．リフレション",
+                "・まとめと練習問題"
+            ]
+        },
+        5: {
+            title: "第5章 非標準ライブラリの活用",
+            contents: [
+                "１．ライブラリとは",
+                "２．クラスパスの幼い",
+                "３．commons-lang　を使ってみよう",
+                "４．ログ出力ライブラリ",
+                "５．オープンソースとライセンス",
+                "・まとめと練習問題"
+            ]
+        },
+        6: {
+            title: "第6章 外部資源へのアクセス",
+            contents: [
+                "１．ファイル操作の前提知識",
+                "２．テキストファイルの読み書き",
+                "３．バイナリファイルの読み書き",
+                "４．ファイル操作の落とし穴",
+                "５．ストリームの概念",
+                "６．フィルタの活用",
+                "７．ファイルシステムの操作",
+                "・まとめと練習問題"
+            ]
+        },
+        7: {
+            title: "第7章 さまさまざまなファイル形式",
+            contents: [
+                "１．データフォーマット",
+                "２．CSV形式",
+                "３．プロパティファイル形式",
+                "４．XML形式",
+                "５．JSON形式",
+                "６．オブジェクトの値列化",
+                "７．さまざまなフォーマット",
+                "・まとめと練習問題"
+            ]
+        },
+        8: {
+            title: "第8章 ネットワークアクセス",
+            contents: [
+                "１．ネットワークAPIの全体像",
+                "２．Soketを用いた低水준アクセス",
+                "３．サ ー バ側ソフトウェアの開発",
+                "４．HTTP と WebAPI",
+                "・まとめと練習問題"
+            ]
+        },
+        9: {
+            title: "第9章 データベースアクセス",
+            contents: [
+                "１. デ ー タベ ー スとha",
+                "２．データベースの基本操作",
+                "３．デ ー タベ ー スの接続と切断",
+                "４．更新糸SQL文の送信",
+                "５．検索糸SQL文の昇進",
+                "６．結果表の処理",
+                "７．java とDBのデータ型",
+                "８．トランザクション処理",
+                "・まとめと練習問題"
+            ]
+        },
+        10: {
+            title: "第10章 基本的な開発ツール",
+            contents: [
+                "１．javaが備える基本ツール",
+                "２．JDK",
+                "３．javadoc-----仕様書の自動生成",
+                "４．javac-----コンパイル",
+                "５．jar-----アーカイブの操作",
+                "６．java-----JVMの起動と実行",
+                "７．jshell-----Javaの対話的実行",
+                "８．統合開発環境",
+                "９．Ant",
+                "１０．Maven",
+                "・まとめと練習問題"
+            ]
+        },
+        11: {
+            title: "第11章 単体テストとアサーション",
+            contents: [
+                "１．不具合に対するアプローチ",
+                "２．単体テストの方法",
+                "３．JUnitを用いたテスト",
+                "４．アサーション",
+                "・まとめと練習問題"
+            ]
+        },
+        12: {
+            title: "第12章 メトリクスとリファクタリング",
+            contents: [
+                "１．品質の「見える化」",
+                "２．さまざまなメトリスク",
+                "３．リファクタリング",
+                "４．コードの静的解析",
+                "・まとめと練習問題"
+            ]
+        },
+        13: {
+            title: "第13章 ソースコードの管理と共有",
+            contents: [
+                "１．チームによる開発",
+                "２．ソースコードの共有",
+                "３．Gitの基礎",
+                "４．Gitツールの利用",
+                "５．競合の発生と解決",
+                "６．ブランチ",
+                "８．Gitサーバ",
+                "・まとめと練習問題"
+            ]
+        },
+        14: {
+            title: "第14章 アジャイルな開発",
+            contents: [
+                "１．チーム開発の基盤",
+                "２．共通の言葉",
+                "３．共通の手順",
+                "４．アジャイルという価値観",
+                "５．エクスとリーム・プログラミング（XP）",
+                "６．スクラム（Scrum）",
+                "７．断続的デブロイメント",
+                "・まとめと練習問題"
+            ]
+        },
+        15: {
+            title: "第15章 設計の原則とデザインパターン",
+            contents: [
+                "１．優れた設計の原則",
+                "２．コード記述全般に関する原則",
+                "３．クラスの設計に関する原則",
+                "４．クラスの関係に関する原則",
+                "５．デザインパターン",
+                "６．Facade-----内部を隠してシンプルに",
+                "７．Singleton-----唯一無ニの存在",
+                "８．Strategy-----プラグインの切り替え",
+                "９．TemplateMethod-----大まかなシナリオ",
+                "１０．モジュール",
+                "・まとめと練習問題"
+            ]
+        },
+        16: {
+            title: "第16章 スレッドによる並렬処理",
+            contents: [
+                "１．処理効率の追求",
+                "２．javaにおける並렬処理",
+                "３．スレッドセーブな設計",
+                "４．スレッド活用と高水準API",
+                "・まとめと練習問題"
+            ]
+        },
+        17: {
+            title: "第17章 ユーザーインタフェース制御",
+            contents: [
+                "１．ユーザーインタフェース",
+                "２．ウィンドウUIの基礎",
+                "３．Swing API の起草",
+                "４．レイアウト",
+                "５．イベントハンドリング",
+                "・まとめと練習問題"
+            ]
+        },
+        18: {
+            title: "付録 A 工ラ ー 解決・虎の巻",
+            contents: [
+                "工ラ ー 解決・虎の巻"
+            ]
+        },
+        19: {
+            title: "付録 B 練習問題の解答",
+            contents: [
+                "練習問題の解答"
+            ]
+        },
+        20: {
+            title: "あとがき&参考文献一覧・索引",
+            contents: [
+                "あとがき&参考文献一覧・索引"
+            ]
+        }
+    };
+
+    /**
+     * Lấy ngày tháng hiện tại với định dạng: [Tháng]月[Ngày]日([Thứ])
+     * Ví dụ: 9月28日(日)
+     * @returns {string} Ngày tháng đã định dạng.
+     */
+    function getFormattedDate() {
+        var date = new Date();
+        var dayOfWeek = ["日","月","火","水","木","金","土"][date.getDay()];
+        return (date.getMonth() + 1) + "月" + date.getDate() + "日(" + dayOfWeek + ")";
+    }
+
+    /**
+     * Tạo nội dung báo cáo dựa trên thông tin người dùng nhập.
+     */
+    function generateReport() {
+        // 1. Lấy tất cả các giá trị từ form
+        // ĐÃ SỬA: Dùng trimPolyfill() thay vì .trim()
+        var authorName = trimPolyfill(document.getElementById('authorName').value);
+        var volume = document.getElementById('volume').value;
+        var learnedChapterField = trimPolyfill(document.getElementById('learnedChapter').value);
+        var nextChapterField = trimPolyfill(document.getElementById('nextChapter').value);
+        var contactInfo = trimPolyfill(document.getElementById('contactInfo').value) || '特になし'; // Dùng trimPolyfill cho giá trị mặc định
+
+        // 2. Kiểm tra tính hợp lệ của dữ liệu
+        var learnedChapterNumber = parseInt(learnedChapterField, 10);
+        var nextChapterNumber = parseInt(nextChapterField, 10);
+
+        if (learnedChapterField === "" || nextChapterField === "") {
+            alert("Vui lòng nhập đầy đủ số chương đã học và chương tiếp theo!");
+            return;
+        }
+
+        if (isNaN(learnedChapterNumber) || isNaN(nextChapterNumber)) {
+            alert("Vui lòng nhập số chương hợp lệ (là một con số)!");
+            return;
+        }
+
+        // 3. Truy cập dữ liệu chương
+        var chapters = (volume === '1') ? chaptersQuyen1 : chaptersQuyen2;
+        var volumeText = (volume === '1') ? "Quyển 1" : "Quyển 2";
+
+        if (!chapters[learnedChapterNumber]) {
+            alert("Số chương đã học (" + learnedChapterNumber + ") không tồn tại trong " + volumeText + "!");
+            return;
+        }
+
+        if (!chapters[nextChapterNumber]) {
+            alert("Số chương tiếp theo (" + nextChapterNumber + ") không tồn tại trong " + volumeText + "!");
+            return;
+        }
+
+        var learnedChapter = chapters[learnedChapterNumber];
+        var nextChapter = chapters[nextChapterNumber];
+        var formattedDate = getFormattedDate();
+
+        // 4. Tạo nội dung báo cáo
+        var reportContent =
+            "【Daily報告 - evo2025_10】" + authorName + "　‐　" + formattedDate + "\n\n" +
+            "Evoltech Vietnam  藤垣さん\nCC　関係者各位\n\n" +
+            "いつもお世話になっております。\n\n" +
+            "IT Program　3期の" + authorName + "です。\n" +
+            "本日、「" + formattedDate + "」の業務報告をさせていただきます。\n" +
+            "ーーーーーーーーーーーーーーーーーーーーーーーーーー\n" +
+            "学習内容：\n" +
+            "学習した時間：６時間"　+ "\n" +
+            learnedChapter.title + "\n\n" +
+            learnedChapter.contents.join("\n") + "\n\n" +
+            "ーーーーーーーーーーーーーーーーーーーーーーーーーー\n" +
+            "次回の予定：\n" +
+            nextChapter.title + "\n\n" +
+            nextChapter.contents.join("\n") + "\n\n" +
+            "連絡事項：\n　・" + contactInfo + "\n" +
+            "ーーーーーーーーーーーーーーーーーーーーーーーーーー\n" +
+            "お手数ですが、ご確認のほどよろしくお願いいたします。";
+
+        // 5. Hiển thị kết quả
+        document.getElementById('reportArea').value = reportContent;
+
+        // Tự động chọn tất cả nội dung để người dùng dễ dàng sao chép
+        var reportArea = document.getElementById('reportArea');
+        reportArea.focus();
+        reportArea.select();
+    }
+</script>
+
+</body>
+</html>
